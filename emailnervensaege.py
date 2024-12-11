@@ -2,7 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import time
-import random
+from datetime import datetime
 from dotenv import load_dotenv
 import os
 
@@ -16,50 +16,71 @@ sender_email = os.getenv("SENDER_EMAIL")
 password = os.getenv("PASSWORD")
 receiver_email = os.getenv("RECEIVER_EMAIL")
 
-# Nachrichtendetails
-subject = "HEY fühl dich nicht genervt XD"
+# Nachrichtendetails für die Ankunftsnachricht um 7 Uhr
+arrival_subject = "Willkommen im Gästehaus Klide"
+arrival_message = """Hallo,
 
-# Nachricht Variationen
-message_variants = [
-    "DU HOFFST DAS WAR DIE LETZTE ? XD",
-    "Test",
-    "KEINE ANGST KOMMEN NOCH MEHR XD",
-]
+schön, dass du im Gästehaus Klide angekommen bist! Wir hoffen, du hast eine angenehme Reise hinter dir.
 
-# Anzahl der Nachrichten
-total_emails = 100  # E-Mails senden
+Unser Frühstück gibt es ab 8 Uhr. Wir freuen uns auf dich!
 
-# Zeitintervall: Pausen zwischen den E-Mails
-min_interval = 30  # 30 Sekunden
-max_interval = 60  # 60 Sekunden
+Mit freundlichen Grüßen,
+Das Team von Gästehaus Klide
+"""
 
-try:
-    # SMTP-Verbindung aufbauen
-    server = smtplib.SMTP(smtp_server, port)
-    server.starttls()  # Verbindung sichern
-    server.login(sender_email, password)  # Login mit App-spezifischem Passwort
+# Nachrichtendetails für die Vorschläge um 12 Uhr
+activity_subject = "Vorschläge für Unternehmungen"
+activity_message = """Hallo,
 
-    for i in range(total_emails):
+wir hoffen, du hast einen angenehmen Aufenthalt bei uns! Falls du noch nicht sicher bist, wie du deinen Tag gestalten möchtest, hier ein paar Vorschläge:
+
+- Wanderung zum nahegelegenen Naturpark
+- Stadtbesichtigung mit einem historischen Rundgang
+- Entspannte Zeit in einem der lokalen Cafés
+
+Viel Spaß bei der Entdeckung!
+
+Mit freundlichen Grüßen,
+Das Team von Gästehaus Klide
+"""
+
+def send_email(subject, body):
+    try:
+        # SMTP-Verbindung aufbauen
+        server = smtplib.SMTP(smtp_server, port)
+        server.starttls()  # Verbindung sichern
+        server.login(sender_email, password)  # Login mit App-spezifischem Passwort
+
         # Nachricht erstellen
         message = MIMEMultipart()
         message["From"] = sender_email
         message["To"] = receiver_email
         message["Subject"] = subject
-        body = random.choice(message_variants)  # Zufällige Variante der Nachricht
         message.attach(MIMEText(body, "plain"))
 
         # E-Mail senden
         server.sendmail(sender_email, receiver_email, message.as_string())
-        print(f"E-Mail {i+1} gesendet mit Text: '{body}'")
+        print(f"E-Mail gesendet: {subject}")
 
-        # Zufällige Wartezeit
-        if i < total_emails - 1:  # Nicht warten nach der letzten E-Mail
-            wait_time = random.randint(min_interval, max_interval)
-            print(f"Warte {wait_time} Sekunden, bevor die nächste E-Mail gesendet wird...")
-            time.sleep(wait_time)
+    except Exception as e:
+        print(f"Ein Fehler ist aufgetreten: {e}")
+    finally:
+        server.quit()
 
-    print("Alle E-Mails erfolgreich gesendet!")
-except Exception as e:
-    print(f"Ein Fehler ist aufgetreten: {e}")
-finally:
-    server.quit()
+# Hauptlogik: E-Mails zu den richtigen Zeiten senden
+while True:
+    current_time = datetime.now()
+
+    # Um 7 Uhr die Ankunftsnachricht senden
+    if current_time.hour == 7 and current_time.minute == 0:
+        send_email(arrival_subject, arrival_message)
+        print(f"Ankunftsnachricht gesendet um {current_time.strftime('%H:%M')}")
+        time.sleep(60)  # Warten, damit es nicht jede Minute wiederholt wird
+
+    # Um 12 Uhr mittags die Vorschläge senden
+    if current_time.hour == 12 and current_time.minute == 0:
+        send_email(activity_subject, activity_message)
+        print(f"Vorschläge für Unternehmungen gesendet um {current_time.strftime('%H:%M')}")
+        time.sleep(60)  # Warten, damit es nicht jede Minute wiederholt wird
+
+    time.sleep(30)  # Alle 30 Sekunden überprüfen
